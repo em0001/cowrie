@@ -15,7 +15,8 @@ import re
 import sys
 import stat
 import time
-from typing import Any, Dict, cast
+import json
+from typing import Any, Dict
 
 from twisted.python import log
 
@@ -108,6 +109,42 @@ class HoneyPotFilesystem:
         self.fs: list[Any]
 
         try:
+            system: str = (log.context.get(log.ILogContext) or {})["system"]
+            honey_transport_regex = r"HoneyPotSSHTransport.*,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+            ip_addr_regex = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+
+            honey_transport = re.search(honey_transport_regex, system)
+            ip_addr = re.search(ip_addr_regex, honey_transport.group(0)).group(0)
+            log.msg(f"Retrieved IP address: {ip_addr}")
+
+            with open(CowrieConfig.get("shell", "prev_conns"), "r") as f:
+                try:
+                    prev_conns = json.load(f)
+                    ip_addresses = prev_conns["ip-addresses"]
+                    first_conn = True
+
+                    for addr in ip_addresses:
+                        if ip_addr == addr:
+                            print("Time to load custom pickle file")
+                            first_conn = False
+                            break
+
+                    # append ip_addr to list of addresses that have connected to the honeypot
+                    if first_conn:
+                        with open(CowrieConfig.get("shell", "prev_conns"), 'w') as x:
+                            ip_addresses.append(ip_addr)
+                            data = {"ip-addresses": ip_addresses}
+                            json.dump(data, x)
+                except KeyError:
+                    print("Failed to retrieve list of previous connection ip addresses")
+
+        except AttributeError:
+            log.msg("Unable to retrieve IP address from log context")
+        except KeyError:
+            log.msg("Unable to retrieve log context")
+
+
+        try:
             with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
                 self.fs = pickle.load(f)
         except UnicodeDecodeError:
@@ -137,19 +174,6 @@ class HoneyPotFilesystem:
         Explore the honeyfs at 'honeyfs_path' and set all A_REALFILE attributes on
         the virtual filesystem.
         """
-
-        try:
-            system = (log.context.get(log.ILogContext) or {})["system"]
-            honey_transport_regex = r"HoneyPotSSHTransport.*,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
-            ip_addr_regex = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
-
-            honey_transport = re.search(honey_transport_regex, system)
-            ip_addr = re.search(ip_addr_regex, honey_transport.group(0))
-            log.msg(f"Retrieved IP address: {ip_addr.group(0)}")
-        except AttributeError:
-            log.msg("Unable to retrieve IP address from log context")
-        except KeyError:
-            log.msg("Unable to retrieve log context")
 
         for path, _directories, filenames in os.walk(honeyfs_path):
             for filename in filenames:
