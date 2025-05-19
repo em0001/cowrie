@@ -15,7 +15,7 @@ import re
 import sys
 import stat
 import time
-from typing import Any
+from typing import Any, Dict, cast
 
 from twisted.python import log
 
@@ -38,6 +38,7 @@ T_LINK, T_DIR, T_FILE, T_BLK, T_CHR, T_SOCK, T_FIFO = list(range(0, 7))
 
 SPECIAL_PATHS: list[str] = ["/sys", "/proc", "/dev/pts"]
 
+EventDict = Dict[str, Any]
 
 class _statobj:
     """
@@ -136,6 +137,19 @@ class HoneyPotFilesystem:
         Explore the honeyfs at 'honeyfs_path' and set all A_REALFILE attributes on
         the virtual filesystem.
         """
+
+        try:
+            system = (log.context.get(log.ILogContext) or {})["system"]
+            honey_transport_regex = r"HoneyPotSSHTransport.*,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+            ip_addr_regex = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+
+            honey_transport = re.search(honey_transport_regex, system)
+            ip_addr = re.search(ip_addr_regex, honey_transport.group(0))
+            log.msg(f"Retrieved IP address: {ip_addr.group(0)}")
+        except AttributeError:
+            log.msg("Unable to retrieve IP address from log context")
+        except KeyError:
+            log.msg("Unable to retrieve log context")
 
         for path, _directories, filenames in os.walk(honeyfs_path):
             for filename in filenames:
