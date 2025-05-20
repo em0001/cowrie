@@ -118,15 +118,26 @@ class HoneyPotFilesystem:
             log.msg(f"Retrieved IP address: {ip_addr}")
             self.ip_addr = ip_addr
 
-            with open(CowrieConfig.get("shell", "prev_conns"), "r") as f:
+            with open(CowrieConfig.get("shell", "prev_conns"), "r") as ip_file:
                 try:
-                    prev_conns = json.load(f)
+                    prev_conns = json.load(ip_file)
                     ip_addresses = prev_conns["ip-addresses"]
                     first_conn = True
 
                     for addr in ip_addresses:
                         if ip_addr == addr:
                             print("Time to load custom pickle file")
+                            pickle_file = f"src/cowrie/data/{self.ip_addr}-fs.pickle"
+                            try:
+                                with open(pickle_file, 'rb') as custom_pickle:
+                                    self.fs = pickle.load(custom_pickle)
+                            except UnicodeDecodeError:
+                                with open(pickle_file, "rb") as custom_pickle:
+                                    self.fs = pickle.load(custom_pickle, encoding="utf8")
+                            except Exception as e:
+                                log.err(e, "ERROR: Failed to load filesystem")
+                                sys.exit(2)
+
                             first_conn = False
                             break
 
@@ -136,6 +147,16 @@ class HoneyPotFilesystem:
                             ip_addresses.append(ip_addr)
                             data = {"ip-addresses": ip_addresses}
                             json.dump(data, x)
+
+                            try:
+                                with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
+                                    self.fs = pickle.load(f)
+                            except UnicodeDecodeError:
+                                with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
+                                    self.fs = pickle.load(f, encoding="utf8")
+                            except Exception as e:
+                                log.err(e, "ERROR: Failed to load filesystem")
+                                sys.exit(2)
                 except KeyError:
                     print("Failed to retrieve list of previous connection ip addresses")
 
@@ -144,16 +165,6 @@ class HoneyPotFilesystem:
         except KeyError:
             log.msg("Unable to retrieve log context")
 
-
-        try:
-            with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
-                self.fs = pickle.load(f)
-        except UnicodeDecodeError:
-            with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
-                self.fs = pickle.load(f, encoding="utf8")
-        except Exception as e:
-            log.err(e, "ERROR: Failed to load filesystem")
-            sys.exit(2)
 
         # Keep track of arch so we can return appropriate binary
         self.arch: str = arch
@@ -171,9 +182,9 @@ class HoneyPotFilesystem:
         self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
 
     def save_honeyfs(self):
-        with open(f'{self.ip_addr}-fs.pickle', 'wb') as f:
+        with open(f'src/cowrie/data/{self.ip_addr}-fs.pickle', 'wb') as f:
             pickle.dump(self.fs, f)
-            print(f"save_honeyfs: {os.getcwd()}")
+            print(f"save_honeyfs: src/cowrie/data/{self.ip_addr}-fs.pickle")
 
     def init_honeyfs(self, honeyfs_path: str) -> None:
         """
