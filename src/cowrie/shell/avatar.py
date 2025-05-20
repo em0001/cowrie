@@ -53,6 +53,7 @@ class CowrieUser(avatar.ConchUser):
             )
 
     def logout(self) -> None:
+        self.server.fs.save_honeyfs()
         log.msg(f"avatar {self.username} logging out")
 
     def lookupChannel(self, channelType, windowSize, maxPacket, data):

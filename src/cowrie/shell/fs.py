@@ -116,6 +116,7 @@ class HoneyPotFilesystem:
             honey_transport = re.search(honey_transport_regex, system)
             ip_addr = re.search(ip_addr_regex, honey_transport.group(0)).group(0)
             log.msg(f"Retrieved IP address: {ip_addr}")
+            self.ip_addr = ip_addr
 
             with open(CowrieConfig.get("shell", "prev_conns"), "r") as f:
                 try:
@@ -168,6 +169,11 @@ class HoneyPotFilesystem:
         # Get the honeyfs path from the config file and explore it for file
         # contents:
         self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
+
+    def save_honeyfs(self):
+        with open(f'{self.ip_addr}-fs.pickle', 'wb') as f:
+            pickle.dump(self.fs, f)
+            print(f"save_honeyfs: {os.getcwd()}")
 
     def init_honeyfs(self, honeyfs_path: str) -> None:
         """
