@@ -187,7 +187,8 @@ class HoneyPotFilesystem:
 
         # Get the honeyfs path from the config file and explore it for file
         # contents:
-        self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
+        # self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
+        self.init_honeyfs(self.CONTENTS_PATH)
 
     def save_honeyfs(self):
         if self.FIRST_CONN:

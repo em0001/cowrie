@@ -74,7 +74,7 @@ class HoneyPotCommand:
                     re.sub("[^A-Za-z0-9]", "_", self.outfile),
                 )
                 self.safeoutfile = os.path.join(
-                    CowrieConfig.get("honeypot", "download_path"), tmp_fname
+                    self.fs.CONTENTS_PATH, tmp_fname
                 )
                 perm = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
                 try:
@@ -99,7 +99,6 @@ class HoneyPotCommand:
                     self.writefn = self.write_to_failed
                     self.outfile = None
                     self.safeoutfile = ""
-
                 else:
                     with open(self.safeoutfile, "ab"):
                         self.fs.update_realfile(
