@@ -132,7 +132,7 @@ class HoneyPotFilesystem:
                     # Load custom picklefile and copy prev filesystem into honeyfs
                     prev_conn = ip_addresses[ip_addr]
                     self.__pickle_file = prev_conn[self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY]
-                    self.__contents_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
+                    contents_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
 
                     try:
                         with open(self.__pickle_file, 'rb') as custom_pickle:
@@ -149,6 +149,8 @@ class HoneyPotFilesystem:
                 except KeyError:
                     print("Failed to retrieve list of previous connection ip addresses")
 
+                    self.FIRST_CONN = True
+
                     # load default cowrie pickle file
                     try:
                         with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
@@ -161,8 +163,10 @@ class HoneyPotFilesystem:
                         sys.exit(2)
 
                     # create directory to store physical files
-                    self.__contents_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
-                    os.mkdir(self.__contents_path)
+                    contents_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
+                    os.mkdir(contents_path)
+
+                self.CONTENTS_PATH = contents_path
 
         except AttributeError:
             log.msg("Unable to retrieve IP address from log context")
@@ -186,26 +190,25 @@ class HoneyPotFilesystem:
         self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
 
     def save_honeyfs(self):
-        custom_pickle_file = f'src/cowrie/data/{self.__ip_addr}-fs.pickle'
-        with open(custom_pickle_file, 'wb') as f:
-            pickle.dump(self.fs, f)
-            print(f"save_honeyfs: {custom_pickle_file}")
+        if self.FIRST_CONN:
+            custom_pickle_file = os.path.join(CowrieConfig.get("honeypot", "data_path"), f"{self.__ip_addr}-fs.pickle")
 
-        with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
-            prev_conns = json.load(prev_conn_ip_file)
+            with open(custom_pickle_file, 'wb') as f:
+                pickle.dump(self.fs, f)
 
-            #TO DO: need to handle key error
-            prev_conns[self.__PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
-                self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: custom_pickle_file,
-                self.__PREV_CONN_IP_ADDR_FS_KEY: ""
-            }
+            with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
+                prev_conns = json.load(prev_conn_ip_file)
 
-            print("Time to copy honeyfs into a safe place :)")
-            #TODO
-            print(prev_conns)
+                #TO DO: need to handle key error
+                prev_conns[self.__PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
+                    self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: custom_pickle_file,
+                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.CONTENTS_PATH
+                }
 
-        with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
-            json.dump(prev_conns, prev_conn_ip_file)
+                print(prev_conns)
+
+            with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
+                json.dump(prev_conns, prev_conn_ip_file)
 
     def init_honeyfs(self, honeyfs_path: str) -> None:
         """
