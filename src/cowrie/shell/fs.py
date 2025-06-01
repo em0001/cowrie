@@ -113,6 +113,7 @@ class HoneyPotFilesystem:
 
     def __init__(self, arch: str, home: str) -> None:
         self.fs: list[Any]
+        self.FIRST_CONN = False
 
         try:
             system: str = (log.context.get(log.ILogContext) or {})["system"]
