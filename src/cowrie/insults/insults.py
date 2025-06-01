@@ -168,43 +168,43 @@ class LoggingServerProtocol(insults.ServerProtocol):
             finally:
                 self.stdinlogOpen = False
 
-        if self.redirFiles:
-            for rp in self.redirFiles:
-                rf = rp[0]
+        # if self.redirFiles:
+        #     for rp in self.redirFiles:
+        #         rf = rp[0]
 
-                if rp[1]:
-                    url = rp[1]
-                else:
-                    url = rf[rf.find("redir_") + len("redir_") :]
+        #         if rp[1]:
+        #             url = rp[1]
+        #         else:
+        #             url = rf[rf.find("redir_") + len("redir_") :]
 
-                try:
-                    if not os.path.exists(rf):
-                        continue
+        #         try:
+        #             if not os.path.exists(rf):
+        #                 continue
 
-                    if os.path.getsize(rf) == 0:
-                        os.remove(rf)
-                        continue
+        #             if os.path.getsize(rf) == 0:
+        #                 os.remove(rf)
+        #                 continue
 
-                    with open(rf, "rb") as f:
-                        shasum = hashlib.sha256(f.read()).hexdigest()
-                        shasumfile = os.path.join(self.downloadPath, shasum)
-                        if os.path.exists(shasumfile):
-                            os.remove(rf)
-                            duplicate = True
-                        else:
-                            os.rename(rf, shasumfile)
-                            duplicate = False
-                    log.msg(
-                        eventid="cowrie.session.file_download",
-                        format="Saved redir contents with SHA-256 %(shasum)s to %(outfile)s",
-                        duplicate=duplicate,
-                        outfile=shasumfile,
-                        shasum=shasum,
-                        destfile=url,
-                    )
-                except OSError:
-                    pass
-            self.redirFiles.clear()
+        #             with open(rf, "rb") as f:
+        #                 shasum = hashlib.sha256(f.read()).hexdigest()
+        #                 shasumfile = os.path.join(self.downloadPath, shasum)
+        #                 if os.path.exists(shasumfile):
+        #                     os.remove(rf)
+        #                     duplicate = True
+        #                 else:
+        #                     os.rename(rf, shasumfile)
+        #                     duplicate = False
+        #             log.msg(
+        #                 eventid="cowrie.session.file_download",
+        #                 format="Saved redir contents with SHA-256 %(shasum)s to %(outfile)s",
+        #                 duplicate=duplicate,
+        #                 outfile=shasumfile,
+        #                 shasum=shasum,
+        #                 destfile=url,
+        #             )
+        #         except OSError:
+        #             pass
+        #     self.redirFiles.clear()
 
         if self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_close(self.ttylogFile, time.time())
