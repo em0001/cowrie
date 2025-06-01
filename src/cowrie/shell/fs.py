@@ -132,7 +132,7 @@ class HoneyPotFilesystem:
                     # Load custom picklefile and copy prev filesystem into honeyfs
                     prev_conn = ip_addresses[ip_addr]
                     self.__pickle_file = prev_conn[self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY]
-                    prev_conn_fs = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
+                    self.__contents_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
 
                     try:
                         with open(self.__pickle_file, 'rb') as custom_pickle:
@@ -159,6 +159,10 @@ class HoneyPotFilesystem:
                     except Exception as e:
                         log.err(e, "ERROR: Failed to load filesystem")
                         sys.exit(2)
+
+                    # create directory to store physical files
+                    self.__contents_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
+                    os.mkdir(self.__contents_path)
 
         except AttributeError:
             log.msg("Unable to retrieve IP address from log context")
