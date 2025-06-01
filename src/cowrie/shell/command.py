@@ -76,6 +76,7 @@ class HoneyPotCommand:
                 self.safeoutfile = os.path.join(
                     self.fs.CONTENTS_PATH, tmp_fname
                 )
+                #TODO potentially change tmp_fname to be os.path.basename(self.outfile)?
                 perm = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
                 try:
                     self.fs.mkfile(
