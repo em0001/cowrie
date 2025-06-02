@@ -113,14 +113,13 @@ class HoneyPotFilesystem:
 
     def __init__(self, arch: str, home: str) -> None:
         self.fs: list[Any]
-        self.FIRST_CONN = False
+        first_conn = False
 
         try:
             system: str = (log.context.get(log.ILogContext) or {})["system"]
 
             honey_transport = re.search(self.__HONEY_TRANSPORT_REGEX, system)
             ip_addr = re.search(self.__IP_ADDR_REGEX, honey_transport.group(0)).group(0)
-            log.msg(f"Retrieved IP address: {ip_addr}")
             self.__ip_addr = ip_addr
 
             self.__PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")
@@ -130,10 +129,10 @@ class HoneyPotFilesystem:
                     prev_conns = json.load(ip_file)
                     ip_addresses = prev_conns[self.__PREV_CONN_IP_ADDR_KEY]
 
-                    # Load custom picklefile and copy prev filesystem into honeyfs
+                    # Load custom picklefile and retrieve honeyfs path
                     prev_conn = ip_addresses[ip_addr]
                     pickle_file = prev_conn[self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY]
-                    contents_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
+                    fs_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
 
                     try:
                         with open(pickle_file, 'rb') as custom_pickle:
@@ -145,12 +144,8 @@ class HoneyPotFilesystem:
                         log.err(e, "ERROR: Failed to load filesystem")
                         sys.exit(2)
 
-                    print("Time to copy previous fs into honeyfs")
-                    #TODO
                 except KeyError:
-                    print("Failed to retrieve list of previous connection ip addresses")
-
-                    self.FIRST_CONN = True
+                    first_conn = True
                     pickle_file = os.path.join(CowrieConfig.get("honeypot", "data_path"), f"{self.__ip_addr}-fs.pickle")
 
                     # load default cowrie pickle file
@@ -165,11 +160,12 @@ class HoneyPotFilesystem:
                         sys.exit(2)
 
                     # create directory to store physical files
-                    contents_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
-                    os.mkdir(contents_path)
+                    fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
+                    os.mkdir(fs_path)
 
-                self.CONTENTS_PATH = contents_path
+                self.FS_PATH = fs_path
                 self.__CUSTOM_PICKLE_FILE = pickle_file
+                self.FIRST_CONN = first_conn
 
         except AttributeError:
             log.msg("Unable to retrieve IP address from log context")
@@ -190,10 +186,12 @@ class HoneyPotFilesystem:
 
         # Get the honeyfs path from the config file and explore it for file
         # contents:
-        # self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
-        self.init_honeyfs(self.CONTENTS_PATH)
+        self.init_honeyfs(self.FS_PATH)
 
     def save_honeyfs(self):
+        """
+        TODO
+        """
         if self.FIRST_CONN:
             with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
                 prev_conns = json.load(prev_conn_ip_file)
@@ -201,7 +199,7 @@ class HoneyPotFilesystem:
                 #TO DO: need to handle key error
                 prev_conns[self.__PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
                     self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
-                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.CONTENTS_PATH
+                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH
                 }
 
             with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:

@@ -657,7 +657,7 @@ class Command_touch(HoneyPotCommand):
 
             # create physical file
             self.safeoutfile = os.path.join(
-                self.fs.CONTENTS_PATH, os.path.basename(pname)
+                self.fs.FS_PATH, os.path.basename(pname)
             )
             with open(self.safeoutfile, "ab"):
                 self.fs.update_realfile(
