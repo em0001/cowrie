@@ -92,7 +92,6 @@ class Command_chmod(HoneyPotCommand):
                     )
                 else:
                     f = self.fs.getfile(path)
-                    NO_PERM_BITS_MASK = 0o000
                     file_mode_no_perm = f[fs.A_MODE] & NO_PERM_BITS_MASK
                     f[fs.A_MODE] = file_mode_no_perm | int(mode, 8)
 
