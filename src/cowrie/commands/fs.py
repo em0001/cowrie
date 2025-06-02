@@ -655,6 +655,15 @@ class Command_touch(HoneyPotCommand):
                 pname, self.protocol.user.uid, self.protocol.user.gid, 0, 33188
             )
 
+            # create physical file
+            self.safeoutfile = os.path.join(
+                self.fs.CONTENTS_PATH, os.path.basename(pname)
+            )
+            with open(self.safeoutfile, "ab"):
+                self.fs.update_realfile(
+                    self.fs.getfile(pname), self.safeoutfile
+                )
+
 
 commands["/bin/touch"] = Command_touch
 commands["touch"] = Command_touch
