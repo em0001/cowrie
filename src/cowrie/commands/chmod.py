@@ -88,6 +88,12 @@ class Command_chmod(HoneyPotCommand):
                     self.write(
                         f"chmod: cannot access '{file}': No such file or directory\n"
                     )
+                else:
+                    f = self.fs.getfile(path)
+                    NO_PERM_BITS_MASK = 0o000
+                    # fs = HoneyPotFilesystem but can't access A_MODE
+                    file_mode_no_perm = f[5] & NO_PERM_BITS_MASK
+                    f[5] = file_mode_no_perm | int(mode, 8)
 
     def parse_args(self):
         mode = None
