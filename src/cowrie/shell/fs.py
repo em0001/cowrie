@@ -108,6 +108,7 @@ class HoneyPotFilesystem:
     __PREV_CONN_IP_ADDR_KEY = "ip-addresses"
     __PREV_CONN_IP_ADDR_PICKLE_FILE_KEY = "fs.pickle"
     __PREV_CONN_IP_ADDR_FS_KEY = "fs"
+    __PREV_CONN_IP_ADDR_RM_FS_KEY = "rm-fs"
     __HONEY_TRANSPORT_REGEX = r"HoneyPotSSHTransport.*,[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
     __IP_ADDR_REGEX = r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
 
@@ -133,6 +134,7 @@ class HoneyPotFilesystem:
                     prev_conn = ip_addresses[ip_addr]
                     pickle_file = prev_conn[self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY]
                     fs_path = prev_conn[self.__PREV_CONN_IP_ADDR_FS_KEY]
+                    rm_fs_path = prev_conn[self.__PREV_CONN_IP_ADDR_RM_FS_KEY]
 
                     try:
                         with open(pickle_file, 'rb') as custom_pickle:
@@ -163,7 +165,12 @@ class HoneyPotFilesystem:
                     fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
                     os.mkdir(fs_path)
 
+                    # create directory to put files that an attacker deletes
+                    rm_fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), "rm-" + self.__ip_addr)
+                    os.mkdir(rm_fs_path)
+
                 self.FS_PATH = fs_path
+                self.RM_FS_PATH = rm_fs_path
                 self.__CUSTOM_PICKLE_FILE = pickle_file
                 self.FIRST_CONN = first_conn
 
@@ -199,7 +206,8 @@ class HoneyPotFilesystem:
                 #TO DO: need to handle key error
                 prev_conns[self.__PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
                     self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
-                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH
+                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH,
+                    self.__PREV_CONN_IP_ADDR_RM_FS_KEY: self.RM_FS_PATH
                 }
 
             with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
