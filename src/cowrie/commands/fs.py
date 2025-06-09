@@ -388,8 +388,11 @@ or available locally via: info '(coreutils) rm invocation'\n"""
                         )
                     else:
                         # move physical file to dir containing record of attacker deleted files
-                        rm_real_file_path = os.path.join(self.fs.RM_FS_PATH, f)
-                        shutil.move(i[fs.A_REALFILE], rm_real_file_path)
+                        if i[fs.A_TYPE] == fs.T_DIR:
+                            shutil.move(i[fs.A_REALFILE], self.fs.RM_FS_PATH)
+                        else:
+                            rm_real_file_path = os.path.join(self.fs.RM_FS_PATH, f)
+                            shutil.move(i[fs.A_REALFILE], rm_real_file_path)
 
                         # remove metadata file entry
                         directory.remove(i)
