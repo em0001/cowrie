@@ -82,6 +82,8 @@ class HoneyPotCommand:
 
                 if self.outfile.startswith(root):
                     path = self.outfile.replace(root, "")
+                elif self.outfile.startswith("/"):
+                    path = self.outfile.replace("/", "", 1)
 
                 self.safeoutfile = os.path.join(self.fs.FS_PATH, path)
 
@@ -110,6 +112,12 @@ class HoneyPotCommand:
                     self.outfile = None
                     self.safeoutfile = ""
                 else:
+                    # check if directory exists - if not create it - handling e.g. creating a file inside /etc
+                    dir = os.path.dirname(self.safeoutfile)
+
+                    if not os.path.exists(dir):
+                        os.mkdir(dir)
+
                     with open(self.safeoutfile, "ab"):
                         self.fs.update_realfile(
                             self.fs.getfile(self.outfile), self.safeoutfile
