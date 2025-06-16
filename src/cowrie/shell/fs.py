@@ -169,6 +169,10 @@ class HoneyPotFilesystem:
                     rm_fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), "rm-" + self.__ip_addr)
                     os.mkdir(rm_fs_path)
 
+                    # Get the honeyfs path from the config file and explore it for file
+                    # contents:
+                    self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
+
                 self.FS_PATH = fs_path
                 self.RM_FS_PATH = rm_fs_path
                 self.__CUSTOM_PICKLE_FILE = pickle_file
@@ -189,6 +193,7 @@ class HoneyPotFilesystem:
         self.filenames: dict[int, str] = {}
 
         # Keep count of new files, so we can have an artificial limit
+        # TODO: fix this
         self.newcount: int = 0
 
         # Get the honeyfs path from the config file and explore it for file

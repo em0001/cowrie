@@ -570,9 +570,18 @@ class Command_mkdir(HoneyPotCommand):
                 self.errorWrite(f"mkdir: cannot create directory `{f}': File exists\n")
                 return
             try:
+                mode = 16877
                 self.fs.mkdir(
-                    pname, self.protocol.user.uid, self.protocol.user.gid, 4096, 16877
+                    pname, self.protocol.user.uid, self.protocol.user.gid, 4096, mode
                 )
+                path = pname
+
+                #TODO - remove hardcoded /root
+                if os.path.dirname(path) == "/root":
+                    path = os.path.split(path)[1]
+
+                safedir = os.path.join(self.fs.FS_PATH, path)
+                os.mkdir(safedir, mode)
             except fs.FileNotFound:
                 self.errorWrite(
                     f"mkdir: cannot create directory `{f}': No such file or directory\n"

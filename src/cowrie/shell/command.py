@@ -67,15 +67,25 @@ class HoneyPotCommand:
                 or p[fs.A_REALFILE].startswith("honeyfs")
                 or not b_append
             ):
-                tmp_fname = "{}-{}-{}-redir_{}".format(
-                    time.strftime("%Y%m%d-%H%M%S"),
-                    self.protocol.getProtoTransport().transportId,
-                    self.protocol.terminal.transport.session.id,
-                    re.sub("[^A-Za-z0-9]", "_", self.outfile),
-                )
-                self.safeoutfile = os.path.join(
-                    self.fs.FS_PATH, os.path.basename(self.outfile)
-                )
+                # tmp_fname = "{}-{}-{}-redir_{}".format(
+                #     time.strftime("%Y%m%d-%H%M%S"),
+                #     self.protocol.getProtoTransport().transportId,
+                #     self.protocol.terminal.transport.session.id,
+                #     re.sub("[^A-Za-z0-9]", "_", self.outfile),
+                # )
+                # self.safeoutfile = os.path.join(
+                #     self.fs.FS_PATH, os.path.basename(self.outfile)
+                # )
+
+                path = self.outfile
+                root = "/root/"
+
+                if self.outfile.startswith(root):
+                    path = self.outfile.replace(root, "")
+
+                self.safeoutfile = os.path.join(self.fs.FS_PATH, path)
+
+                print(f"HoneyPotCommand - init - UPDATED self.safeoutfile - {self.safeoutfile}")
                 perm = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
                 try:
                     self.fs.mkfile(
