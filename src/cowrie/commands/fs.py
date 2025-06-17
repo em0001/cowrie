@@ -676,9 +676,22 @@ class Command_touch(HoneyPotCommand):
             )
 
             # create physical file
-            self.safeoutfile = os.path.join(
-                self.fs.FS_PATH, os.path.basename(pname)
-            )
+            path = pname
+            root = "/root/"
+
+            if path.startswith(root):
+                path = path.replace(root, "", 1)
+            elif path.startswith("/"):
+                path = path.replace("/", "", 1)
+
+            self.safeoutfile = os.path.join(self.fs.FS_PATH, path)
+
+            # check if directory exists - if not create it - handling e.g. creating a file inside /etc
+            dir = os.path.dirname(self.safeoutfile)
+
+            if not os.path.exists(dir):
+                os.mkdir(dir)
+
             with open(self.safeoutfile, "ab"):
                 self.fs.update_realfile(
                     self.fs.getfile(pname), self.safeoutfile
