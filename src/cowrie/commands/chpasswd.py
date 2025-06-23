@@ -44,7 +44,10 @@ class Command_chpasswd(HoneyPotCommand):
                     if not len(p):
                         self.write(f"chpasswd: line {c}: missing new password\n")
                     else:
-                        pass
+                        user = u.decode('utf-8')
+                        passwd = p.decode('utf-8')
+
+                        self.fs.update_passwd(user, passwd)
                         """
                         TODO:
                             - update shadow file
