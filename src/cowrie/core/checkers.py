@@ -127,7 +127,7 @@ class HoneypotPasswordChecker:
         else:
             log.msg(f"auth_class: {authclass} not found in {authmodule}")
 
-        theauth = authname()
+        theauth = authname(ip)
 
         if theauth.checklogin(theusername, thepassword, ip):
             log.msg(

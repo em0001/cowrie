@@ -107,7 +107,7 @@ class PermissionDenied(Exception):
 
 
 class HoneyPotFilesystem:
-    PREV_CONN_CREDS_KEY = "password"
+    PREV_CONN_CREDS_KEY = "cred-list"
     PREV_CONN_IP_ADDR_KEY = "ip-addresses"
     __PREV_CONN_IP_ADDR_PICKLE_FILE_KEY = "fs.pickle"
     __PREV_CONN_IP_ADDR_FS_KEY = "fs"
@@ -211,12 +211,19 @@ class HoneyPotFilesystem:
             with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
                 prev_conns = json.load(prev_conn_ip_file)
 
-                #TO DO: need to handle key error
+                #TO DO: need to handle key errors
+
+                # don't overwrite the creds retrieved during auth process
+                creds = {
+                    self.PREV_CONN_CREDS_KEY:
+                        prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr][self.PREV_CONN_CREDS_KEY]
+                }
+
                 prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
                     self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
                     self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH,
                     self.__PREV_CONN_IP_ADDR_RM_FS_KEY: self.RM_FS_PATH
-                }
+                } | creds
 
             with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
                 json.dump(prev_conns, prev_conn_ip_file)
