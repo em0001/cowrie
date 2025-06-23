@@ -246,6 +246,36 @@ class HoneyPotFilesystem:
             with open(PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
                 json.dump(prev_conns, prev_conn_ip_file)
 
+    def update_passwd(self, username: str, passwd: str):
+        with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
+            prev_conns = json.load(prev_conn_ip_file)
+
+            #TO DO: need to handle key errors
+            prev_conn = prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr]
+            cur_creds = prev_conn[self.PREV_CONN_CREDS_KEY]
+
+            new_creds: list[str] = []
+
+            for user in cur_creds:
+                try:
+                    c_username = user.split(":")[0]
+
+                    # remove all other possible passwords that can be used with the username
+                    if username == c_username:
+                        new_entry = c_username + ":" + user.split(":")[1] + ":" + passwd
+
+                        if new_entry not in new_creds:
+                            new_creds.append(new_entry)
+                    else:
+                        new_creds.append(user)
+                except IndexError:
+                    continue
+
+            prev_conn[self.PREV_CONN_CREDS_KEY] = new_creds
+
+            with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
+                json.dump(prev_conns, prev_conn_ip_file)
+
     @staticmethod
     def get_prev_conn_info(ip_addr: str) -> Dict[str, str | OrderedDict[tuple[Pattern[bytes] | bytes, Pattern[bytes] | bytes], bool]] | None:
         PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")

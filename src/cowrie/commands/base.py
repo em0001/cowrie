@@ -842,6 +842,7 @@ class Command_passwd(HoneyPotCommand):
         if line != self.passwd or self.passwd == "*":
             self.write("Sorry, passwords do not match\n")
         else:
+            self.fs.update_passwd(self.protocol.user.username, self.passwd)
             self.write("passwd: password updated successfully\n")
         self.exit()
 
