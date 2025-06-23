@@ -684,13 +684,30 @@ class Command_touch(HoneyPotCommand):
             elif path.startswith("/"):
                 path = path.replace("/", "", 1)
 
+            #etc/ssh/k
+            # check if directory exists - if not create it - handling e.g. creating a file inside /etc
+            path_without_file: str = os.path.dirname(path)
+            path_elements = path_without_file.split("/")
+            print(f"HELLO - NEED A LOOP HERE - {path_without_file}")
+            print(path_without_file)
+            print(path_elements)
+
+            tmp_path = self.fs.FS_PATH
+
+            for el in path_elements:
+                tmp_path = os.path.join(tmp_path, el)
+                print(tmp_path)
+
+                if not os.path.exists(tmp_path):
+                    os.mkdir(tmp_path)
+
             self.safeoutfile = os.path.join(self.fs.FS_PATH, path)
 
-            # check if directory exists - if not create it - handling e.g. creating a file inside /etc
-            dir = os.path.dirname(self.safeoutfile)
 
-            if not os.path.exists(dir):
-                os.mkdir(dir)
+            # dir = os.path.dirname(self.safeoutfile)
+
+            # if not os.path.exists(dir):
+            #     os.mkdir(dir)
 
             with open(self.safeoutfile, "ab"):
                 self.fs.update_realfile(
