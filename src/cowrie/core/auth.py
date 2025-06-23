@@ -13,8 +13,9 @@ import re
 from collections import OrderedDict
 from os import path
 from random import randint
-from typing import Any
+from typing import Any, List
 from re import Pattern
+from cowrie.shell.fs import HoneyPotFilesystem as fs
 
 from twisted.python import log
 
@@ -57,6 +58,8 @@ class UserDB:
             log.msg("Could not read etc/userdb.txt, default database activated")
             dblines = _USERDB_DEFAULTS
 
+        cred_list = []
+
         for user in dblines:
             if not user.startswith("#"):
                 try:
@@ -65,11 +68,26 @@ class UserDB:
                 except IndexError:
                     continue
                 else:
-                    self.adduser(login, password)
+                    self.adduser(login, password, cred_list)
+        self.__CRED_LIST = cred_list
 
     def checklogin(
         self, thelogin: bytes, thepasswd: bytes, src_ip: str = "0.0.0.0"
     ) -> bool:
+        prev_conn = fs.get_prev_conn_info(src_ip)
+
+        if prev_conn:
+            try:
+                # RETRIEVE AND CHECK RECORDED USER,PASSWD for the user
+                print(f"TO IMPLEMENT :)")
+            except KeyError:
+                return self.__check_default_credentials(thelogin, thepasswd)
+        else:
+            fs.write_db_creds_to_prev_conns(src_ip, self.__CRED_LIST)
+            return self.__check_default_credentials(thelogin, thepasswd)
+        return False
+
+    def __check_default_credentials(self, thelogin: bytes, thepasswd: bytes) -> bool:
         for credentials, policy in self.userdb.items():
             login: bytes | Pattern[bytes]
             passwd: bytes | Pattern[bytes]
@@ -99,7 +117,7 @@ class UserDB:
 
         return rule
 
-    def adduser(self, login: bytes, passwd: bytes) -> None:
+    def adduser(self, login: bytes, passwd: bytes, cred_list=None) -> None:
         """
         All arguments are bytes
 
@@ -119,6 +137,8 @@ class UserDB:
         p = self.re_or_bytes(passwd)
         self.userdb[(user, p)] = policy
 
+        if cred_list is not None:
+            cred_list.append(((str(login), str(passwd)), policy))
 
 class AuthRandom:
     """

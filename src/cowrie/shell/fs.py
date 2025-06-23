@@ -17,6 +17,8 @@ import stat
 import time
 import json
 from typing import Any, Dict
+from collections import OrderedDict
+from re import Pattern
 
 from twisted.python import log
 
@@ -105,7 +107,8 @@ class PermissionDenied(Exception):
 
 
 class HoneyPotFilesystem:
-    __PREV_CONN_IP_ADDR_KEY = "ip-addresses"
+    PREV_CONN_CREDS_KEY = "password"
+    PREV_CONN_IP_ADDR_KEY = "ip-addresses"
     __PREV_CONN_IP_ADDR_PICKLE_FILE_KEY = "fs.pickle"
     __PREV_CONN_IP_ADDR_FS_KEY = "fs"
     __PREV_CONN_IP_ADDR_RM_FS_KEY = "rm-fs"
@@ -128,7 +131,7 @@ class HoneyPotFilesystem:
             with open(self.__PREV_CONNS_FILE, "r") as ip_file:
                 try:
                     prev_conns = json.load(ip_file)
-                    ip_addresses = prev_conns[self.__PREV_CONN_IP_ADDR_KEY]
+                    ip_addresses = prev_conns[self.PREV_CONN_IP_ADDR_KEY]
 
                     # Load custom picklefile and retrieve honeyfs path
                     prev_conn = ip_addresses[ip_addr]
@@ -209,7 +212,7 @@ class HoneyPotFilesystem:
                 prev_conns = json.load(prev_conn_ip_file)
 
                 #TO DO: need to handle key error
-                prev_conns[self.__PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
+                prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
                     self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
                     self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH,
                     self.__PREV_CONN_IP_ADDR_RM_FS_KEY: self.RM_FS_PATH
@@ -220,6 +223,34 @@ class HoneyPotFilesystem:
 
         with open(self.__CUSTOM_PICKLE_FILE, 'wb') as f:
             pickle.dump(self.fs, f)
+
+    @staticmethod
+    def write_db_creds_to_prev_conns(ip_addr: str, db_creds: OrderedDict[tuple[Pattern[bytes] | bytes, Pattern[bytes] | bytes], bool]) -> None:
+        PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")
+
+        with open(PREV_CONNS_FILE, 'r') as ip_file:
+            prev_conns = json.load(ip_file)
+
+            #TO DO: need to handle key error
+            prev_conns[HoneyPotFilesystem.PREV_CONN_IP_ADDR_KEY][ip_addr] = {
+                HoneyPotFilesystem.PREV_CONN_CREDS_KEY: db_creds
+            }
+
+            with open(PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
+                json.dump(prev_conns, prev_conn_ip_file)
+
+    @staticmethod
+    def get_prev_conn_info(ip_addr: str) -> Dict[str, str | OrderedDict[tuple[Pattern[bytes] | bytes, Pattern[bytes] | bytes], bool]] | None:
+        PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")
+
+        with open(PREV_CONNS_FILE, "r") as ip_file:
+            try:
+                prev_conns = json.load(ip_file)
+                ip_addresses = prev_conns[HoneyPotFilesystem.PREV_CONN_IP_ADDR_KEY]
+                prev_conn = ip_addresses[ip_addr]
+                return prev_conn
+            except KeyError:
+                return None
 
     def init_honeyfs(self, honeyfs_path: str) -> None:
         """
