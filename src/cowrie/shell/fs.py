@@ -15,6 +15,7 @@ import re
 import sys
 import stat
 import time
+import datetime
 import json
 from typing import Any, Dict
 from collections import OrderedDict
@@ -109,6 +110,7 @@ class PermissionDenied(Exception):
 class HoneyPotFilesystem:
     PREV_CONN_CREDS_KEY = "cred-list"
     PREV_CONN_IP_ADDR_KEY = "ip-addresses"
+    __SHADOW_FILE = "/etc/shadow"
     __PREV_CONN_IP_ADDR_PICKLE_FILE_KEY = "fs.pickle"
     __PREV_CONN_IP_ADDR_FS_KEY = "fs"
     __PREV_CONN_IP_ADDR_RM_FS_KEY = "rm-fs"
@@ -260,12 +262,46 @@ class HoneyPotFilesystem:
                 try:
                     c_username = user.split(":")[0]
 
-                    # remove all other possible passwords that can be used with the username
                     if username == c_username:
+                        # remove all other possible passwords that can be used with the username
                         new_entry = c_username + ":" + user.split(":")[1] + ":" + passwd
 
                         if new_entry not in new_creds:
                             new_creds.append(new_entry)
+
+                            # update the shadow file
+                            path = self.__SHADOW_FILE.replace("/", "", 1)
+                            shadow_file = os.path.join(self.FS_PATH, path)
+
+                            # check if etc directory exists - if not create it
+                            dir = os.path.dirname(shadow_file)
+                            if not os.path.exists(dir):
+                                os.mkdir(dir)
+
+                            if not os.path.exists(shadow_file):
+                                # retrieve the default shadow file contents
+                                contents = self.file_contents(self.__SHADOW_FILE).decode("utf8")
+                                shadow_file_obj = self.getfile(self.__SHADOW_FILE)
+                                shadow_file_obj[A_REALFILE] = shadow_file
+                            else:
+                                # retrieve current shadow file contents
+                                with open(shadow_file, "r") as cur_shadow:
+                                    contents = cur_shadow.read()
+
+                            users = contents.split("\n")
+                            new_contents = ""
+                            for user in users:
+                                if user.startswith(username):
+                                    last_passwd_change = int(datetime.datetime.now().timestamp() / 86400)
+                                    encrypted_passwd = "$6$" + str(hashlib.sha512(passwd.encode()).hexdigest())
+                                    other_user_info = user.split(":", 3)
+                                    new_user = username + ":" + encrypted_passwd + ":" + str(last_passwd_change) + ":" + other_user_info[3]
+                                    new_contents += new_user + "\n"
+                                else:
+                                    new_contents += user + "\n"
+
+                            with open(shadow_file, 'w') as updated_shadow:
+                                updated_shadow.write(new_contents)
                     else:
                         new_creds.append(user)
                 except IndexError:
