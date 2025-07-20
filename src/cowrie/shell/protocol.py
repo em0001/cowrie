@@ -198,7 +198,11 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         obj = cmd(self, *args)
         obj.set_input_data(pp.input_data)
         self.cmdstack.append(obj)
+        for i in self.cmdstack:
+            print(f"call_command(self, pp, cmd, *args) ------- {obj} -------- {i}")
         obj.start()
+        for i in self.cmdstack:
+            print(f"call_command(self, pp, cmd, *args) ------- {obj} -------- {i}")
 
         if self.pp:
             self.pp.outConnectionLost()
@@ -334,6 +338,9 @@ class HoneyPotInteractiveProtocol(HoneyPotBaseProtocol, recvline.HistoricRecvLin
         recvline.RecvLine.handle_RETURN(self)
 
     def handle_CTRL_C(self) -> None:
+        print("HoneyPotInteractiveProtocol - handle_CTRL_C(self)")
+        for x in self.cmdstack:
+            print(f"x: {x}")
         if self.cmdstack:
             self.cmdstack[-1].handle_CTRL_C()
 

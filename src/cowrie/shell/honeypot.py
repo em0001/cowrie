@@ -401,6 +401,7 @@ class HoneyPotShell:
             self.protocol.cmdstack[-1].handle_CTRL_D()
 
     def handle_CTRL_C(self) -> None:
+        print("HoneyPotShell - handle_CTRL_C(self)")
         self.protocol.lineBuffer = []
         self.protocol.lineBufferIndex = 0
         self.protocol.terminal.write(b"\n")

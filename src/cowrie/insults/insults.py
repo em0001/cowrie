@@ -105,6 +105,21 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         insults.ServerProtocol.write(self, data)
 
+    def topPlayingAround(self, data: bytes, num_lines: int) -> None:
+        self.bytesSent += len(data)
+        if self.ttylogEnabled and self.ttylogOpen:
+            ttylog.ttylog_write(
+                self.ttylogFile, len(data), ttylog.TYPE_OUTPUT, time.time(), data
+            )
+            self.ttylogSize += len(data)
+
+        if num_lines > 0:
+            print("topPlayingAround(self, data: bytes, num_lines: int)")
+            insults.ServerProtocol.cursorUp(self, num_lines)
+            insults.ServerProtocol.eraseToDisplayEnd(self)
+
+        insults.ServerProtocol.write(self, data)
+
     def dataReceived(self, data: bytes) -> None:
         """
         Input received from user
