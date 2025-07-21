@@ -49,7 +49,7 @@ __all__ = [
     "tar",
     "tee",
     "tftp",
-    "ttop",
+    "top",
     "ulimit",
     "uname",
     "uniq",

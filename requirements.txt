@@ -11,3 +11,4 @@ tftpy==0.8.5
 treq==24.9.1
 twisted==24.11.0
 urllib3==2.4.0
+openai==1.97.0
