@@ -137,6 +137,10 @@ timezone = UTC
 # Beware that the path won't be included in your prompt any longer
 # prompt = hello>
 
+# OpenAI
+open_ai_api_key = NEEDS_TO_BE_POPULATED
+open_ai_top_output_delimiter = ***
+open_ai_prompt = "You are a Linux OS terminal. Produce three outputs for the command ‘top’ that is running on an AWS debian ec2 instance. Only include 'root' in the list of users. Replace ‘PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND’ with ‘***PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND***’. Do not show any interactive text editors as running processes (e.g., ‘gedit’, ‘nano’, ‘vim’, ‘less’)."
 
 # ============================================================================
 # Network Specific Options
