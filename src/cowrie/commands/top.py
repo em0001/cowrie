@@ -16,6 +16,7 @@ commands = {}
 class Command_top(HoneyPotCommand):
     BLACK_ON_WHITE='\033[30;47m'
     RESET='\033[0m'
+    PROCESS_HEADING="PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND"
     index = 0
     lc = None
     nlines = 0
@@ -30,28 +31,23 @@ class Command_top(HoneyPotCommand):
         openai_api_key = CowrieConfig.get("honeypot", "open_ai_api_key")
         client = OpenAI(api_key=openai_api_key)
 
-        completion = client.chat.completions.create(
+        raw = client.chat.completions.create(
             model="gpt-3.5-turbo-16k",
             messages=[{"role": "system", "content": prompt}],
             temperature=0.0
         )
 
-        delim = CowrieConfig.get("honeypot", "open_ai_top_output_delimiter")
-        raw_msg = completion.choices[0].message.content.replace("```", "")
-        print(raw_msg)
+        delim = CowrieConfig.get("honeypot", "open_ai_delim")
+        raw_msg = raw.choices[0].message.content.replace("```", "")
         outputs = raw_msg.split(delim)
-        filtered_outputs = [item for item in outputs if item != "" and item != "\n"]
-        print(filtered_outputs)
-        index = 0
 
-        while index < len(filtered_outputs)-1:
-            formatted_msg = self.BLACK_ON_WHITE + filtered_outputs[index] + self.RESET + filtered_outputs[index+1]
-            self.responses.append(formatted_msg)
-            print("---------------")
-            print(index)
-            print(formatted_msg)
-            print("---------------")
-            index += 2
+        for o in outputs:
+            if o != "":
+                output_pieces = o.split(self.PROCESS_HEADING)
+
+                if len(output_pieces) == 2:
+                    formatted_msg = output_pieces[0] + self.BLACK_ON_WHITE + "-    -" +  self.PROCESS_HEADING + self.RESET + output_pieces[1]
+                    self.responses.append(formatted_msg)
 
     def start(self) -> None:
         self.retrieve_top_output()
