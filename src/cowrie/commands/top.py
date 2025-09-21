@@ -63,6 +63,7 @@ class Command_top(HoneyPotCommand):
         if self.lc:
             self.lc.stop()
             self.lc = None
+        self.protocol.terminal.makeCursorVisible()
         return HoneyPotCommand.handle_CTRL_C(self)
 
     def display_new_top_output(self):
@@ -70,7 +71,7 @@ class Command_top(HoneyPotCommand):
         if self.index >= len(self.responses):
             self.index = 0
         output = self.responses[self.index]
-        self.protocol.terminal.topPlayingAround(bytes(output, 'utf-8'), self.nlines)
+        self.protocol.terminal.displayTopOutput(bytes(output, 'utf-8'), self.nlines)
         self.nlines = output.count("\n")
 
 commands["/bin/top"] = Command_top

@@ -105,7 +105,12 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         insults.ServerProtocol.write(self, data)
 
-    def topPlayingAround(self, data: bytes, num_lines: int) -> None:
+    def makeCursorVisible(self) -> None:
+        insults.ServerProtocol.setPrivateModes(self, [insults.privateModes.CURSOR_MODE])
+
+    def displayTopOutput(self, data: bytes, num_lines: int) -> None:
+        insults.ServerProtocol.resetPrivateModes(self, [insults.privateModes.CURSOR_MODE])
+
         self.bytesSent += len(data)
         if self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(
@@ -114,7 +119,6 @@ class LoggingServerProtocol(insults.ServerProtocol):
             self.ttylogSize += len(data)
 
         if num_lines > 0:
-            print("topPlayingAround(self, data: bytes, num_lines: int)")
             insults.ServerProtocol.cursorUp(self, num_lines)
             insults.ServerProtocol.eraseToDisplayEnd(self)
 
