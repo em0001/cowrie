@@ -126,11 +126,11 @@ class HoneyPotFilesystem:
 
             honey_transport = re.search(self.__HONEY_TRANSPORT_REGEX, system)
             ip_addr = re.search(self.__IP_ADDR_REGEX, honey_transport.group(0)).group(0)
-            self.__ip_addr = ip_addr
+            self.IP_ADDR = ip_addr
 
-            self.__PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")
+            self.PREV_CONNS_FILE = CowrieConfig.get("shell", "prev_conns")
 
-            with open(self.__PREV_CONNS_FILE, "r") as ip_file:
+            with open(self.PREV_CONNS_FILE, "r") as ip_file:
                 try:
                     prev_conns = json.load(ip_file)
                     ip_addresses = prev_conns[self.PREV_CONN_IP_ADDR_KEY]
@@ -153,7 +153,7 @@ class HoneyPotFilesystem:
 
                 except KeyError:
                     first_conn = True
-                    pickle_file = os.path.join(CowrieConfig.get("honeypot", "data_path"), f"{self.__ip_addr}-fs.pickle")
+                    pickle_file = os.path.join(CowrieConfig.get("honeypot", "data_path"), f"{self.IP_ADDR}-fs.pickle")
 
                     # load default cowrie pickle file
                     try:
@@ -167,21 +167,22 @@ class HoneyPotFilesystem:
                         sys.exit(2)
 
                     # create directory to store physical files
-                    fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.__ip_addr)
+                    fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), self.IP_ADDR)
                     os.mkdir(fs_path)
 
                     # create directory to put files that an attacker deletes
-                    rm_fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), "rm-" + self.__ip_addr)
+                    rm_fs_path = os.path.join(CowrieConfig.get("honeypot", "download_path"), "rm-" + self.IP_ADDR)
                     os.mkdir(rm_fs_path)
 
-                    # Get the honeyfs path from the config file and explore it for file
-                    # contents:
+                    # Get the honeyfs path from the config file and explore it for file contents:
                     self.init_honeyfs(CowrieConfig.get("honeypot", "contents_path"))
 
                 self.FS_PATH = fs_path
                 self.RM_FS_PATH = rm_fs_path
                 self.__CUSTOM_PICKLE_FILE = pickle_file
-                self.FIRST_CONN = first_conn
+
+                if first_conn:
+                    self.create_prev_conn_entry()
 
         except AttributeError:
             log.msg("Unable to retrieve IP address from log context")
@@ -205,31 +206,30 @@ class HoneyPotFilesystem:
         # contents:
         self.init_honeyfs(self.FS_PATH)
 
-    def save_honeyfs(self):
+    def create_prev_conn_entry(self):
         """
-        TODO
         """
-        if self.FIRST_CONN:
-            with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
-                prev_conns = json.load(prev_conn_ip_file)
+        with open(self.PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
+            prev_conns = json.load(prev_conn_ip_file)
 
-                #TO DO: need to handle key errors
+            #TO DO: need to handle key errors
 
-                # don't overwrite the creds retrieved during auth process
-                creds = {
-                    self.PREV_CONN_CREDS_KEY:
-                        prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr][self.PREV_CONN_CREDS_KEY]
-                }
+            # don't overwrite the creds retrieved during auth process
+            creds = {
+                self.PREV_CONN_CREDS_KEY:
+                    prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.IP_ADDR][self.PREV_CONN_CREDS_KEY]
+            }
 
-                prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr] = {
-                    self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
-                    self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH,
-                    self.__PREV_CONN_IP_ADDR_RM_FS_KEY: self.RM_FS_PATH
-                } | creds
+            prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.IP_ADDR] = {
+                self.__PREV_CONN_IP_ADDR_PICKLE_FILE_KEY: self.__CUSTOM_PICKLE_FILE,
+                self.__PREV_CONN_IP_ADDR_FS_KEY: self.FS_PATH,
+                self.__PREV_CONN_IP_ADDR_RM_FS_KEY: self.RM_FS_PATH
+            } | creds
 
-            with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
-                json.dump(prev_conns, prev_conn_ip_file)
+        with open(self.PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
+            json.dump(prev_conns, prev_conn_ip_file)
 
+    def update_custom_pickle_file(self):
         with open(self.__CUSTOM_PICKLE_FILE, 'wb') as f:
             pickle.dump(self.fs, f)
 
@@ -249,11 +249,11 @@ class HoneyPotFilesystem:
                 json.dump(prev_conns, prev_conn_ip_file)
 
     def update_passwd(self, username: str, passwd: str):
-        with open(self.__PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
+        with open(self.PREV_CONNS_FILE, 'r') as prev_conn_ip_file:
             prev_conns = json.load(prev_conn_ip_file)
 
             #TO DO: need to handle key errors
-            prev_conn = prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.__ip_addr]
+            prev_conn = prev_conns[self.PREV_CONN_IP_ADDR_KEY][self.IP_ADDR]
             cur_creds = prev_conn[self.PREV_CONN_CREDS_KEY]
 
             new_creds: list[str] = []
@@ -309,7 +309,7 @@ class HoneyPotFilesystem:
 
             prev_conn[self.PREV_CONN_CREDS_KEY] = new_creds
 
-            with open(self.__PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
+            with open(self.PREV_CONNS_FILE, 'w') as prev_conn_ip_file:
                 json.dump(prev_conns, prev_conn_ip_file)
 
     @staticmethod
