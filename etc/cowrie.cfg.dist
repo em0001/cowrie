@@ -140,7 +140,7 @@ timezone = UTC
 # OpenAI
 open_ai_api_key = NEEDS_TO_BE_POPULATED
 open_ai_delim = --OUTPUT--
-open_ai_prompt = "You are an AWS Debian EC2 instance terminal. Produce three different outputs for the command ‘top’, include the statistics on processes and resource usage. Each output should show 20 running processes with the ID numbers 1 - 20. Only include root as the name for the users. Only delimit each output with --OUTPUT--\n"
+open_ai_prompt = "You are an AWS Debian EC2 instance terminal. Produce three outputs for the command ‘top’, include the statistics on processes and resource usage. The first output should show 20 running processes with the ID numbers 1 - 20. The second and third outputs should contain the running processes from the first output but in a shuffled order. Only include root as the name for the users. Only delimit each output with --OUTPUT--\n"
 
 # ============================================================================
 # Network Specific Options
